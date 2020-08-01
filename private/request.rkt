@@ -6,6 +6,7 @@
 (define-type QueryPair (Pairof Symbol (Option String)))
 
 ; Fake nominal typing
+(define-type GeminiString (U String (U 'secure 'insecure)))
 (define-type SecureString (U String 'secure))
 (define-type InsecureString (U String 'insecure))
 

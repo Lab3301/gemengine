@@ -23,3 +23,22 @@
 (: redirect (-> SecureString response))
 (define (redirect url)
   (response (format "30 ~a\r\n" url)))
+
+(: escape (-> GeminiString SecureString))
+(define (escape text)
+  (assert text string?)
+
+  (cond
+    [(zero? (string-length text)) text]
+    [(special-char-prefix? text) (format "\\~a" text)]
+    [else text]))
+
+(: special-char-prefix? (-> String Boolean))
+(define (special-char-prefix? text)
+  (define special-chars : (Listof String)
+    (list "#" "* " "=> " "```" ">"))
+
+  (ormap
+   (lambda ([prefix : String])
+     (string-prefix? text prefix))
+   special-chars))
