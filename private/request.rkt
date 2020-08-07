@@ -37,13 +37,6 @@
 
   (request url path query 'ok))
 
-(: path/param->string (-> Path/Param String))
-(define (path/param->string path-param)
-  (let* ([path (path/param-path path-param)]
-         [iparam (path/param-param path-param)]
-         [param (if (empty? iparam) "" (string-join iparam ";" #:before-first ";"))])
-    (format "~a~a" path param)))
-
 (: url-query->string (-> (Listof QueryPair) String))
 (define (url-query->string query-pairs)
   (: query-pair->string (-> QueryPair String))

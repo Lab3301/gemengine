@@ -6,6 +6,13 @@
 (define-type URL-Path-Segment (U 'up 'same 'wildcard String))
 (define-type URL-Path (Listof URL-Path-Segment))
 
+(: path/param->string (-> Path/Param String))
+(define (path/param->string path-param)
+  (let* ([path (path/param-path path-param)]
+         [iparam (path/param-param path-param)]
+         [param (if (empty? iparam) "" (string-join iparam ";" #:before-first ";"))])
+    (format "~a~a" path param)))
+
 (: string->url-path (-> String URL-Path))
 (define (string->url-path path)
   (map path/param-path (url-path (string->url path))))
@@ -16,7 +23,8 @@
 
 (: path-with-wildcard (-> Path/Param URL-Path-Segment))
 (define (path-with-wildcard path)
-  (define segment (path/param-path path))
+  (define segment (path/param->string path))
+
   (if (and (string? segment) (string-prefix? segment ":"))
       'wildcard
       segment))
