@@ -32,10 +32,17 @@
 (define (string->request line)
   (define url (string->url line))
   (define path : URL-Path
-    (map path/param-path (url-path url)))
+    (map path/param->string (url-path url)))
   (define query : String (url-query->string (url-query url)))
 
   (request url path query 'ok))
+
+(: path/param->string (-> Path/Param String))
+(define (path/param->string path-param)
+  (let* ([path (path/param-path path-param)]
+         [iparam (path/param-param path-param)]
+         [param (if (empty? iparam) "" (string-join iparam ";" #:before-first ";"))])
+    (format "~a~a" path param)))
 
 (: url-query->string (-> (Listof QueryPair) String))
 (define (url-query->string query-pairs)
