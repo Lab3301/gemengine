@@ -16,8 +16,8 @@
 (provide serve serve-forever route (struct-out request)
          response (all-from-out "private/utils.rkt"))
 
-(: serve (-> Positive-Integer String String (-> Void)))
-(define (serve port-no cert key)
+(: serve (-> Positive-Integer String String Positive-Integer (-> Void)))
+(define (serve port-no cert key timeout)
   (define main-cust (make-custodian))
 
   (parameterize ([current-custodian main-cust])
@@ -29,24 +29,30 @@
     (define listener : SSL-Listener (ssl-listen port-no 5 #t #f ctx))
 
     (define (loop) : Void
-      (accept-and-handle listener)
+      (accept-and-handle listener timeout)
       (loop))
 
     (thread loop))
+
   (lambda ()
     (custodian-shutdown-all main-cust)))
 
-(: serve-forever (->* (Positive-Integer) (#:certificate String #:key String) (-> Void)))
-(define (serve-forever port-no #:certificate [cert "/etc/gemini/certificate.pem"] #:key [key "/etc/gemini/key.pem"])
-  (serve port-no cert key)
+(: serve-forever (->* (Positive-Integer)
+                      (#:certificate String #:key String #:timeout Positive-Integer)
+                      (-> Void)))
+(define (serve-forever port-no
+                       #:certificate [cert "/etc/gemini/certificate.pem"]
+                       #:key [key "/etc/gemini/key.pem"]
+                       #:timeout [timeout 10])
+  (serve port-no cert key timeout)
 
   (define (loop)
     (sync never-evt))
 
   (loop))
 
-(: accept-and-handle (-> SSL-Listener Thread))
-(define (accept-and-handle listener)
+(: accept-and-handle (-> SSL-Listener Positive-Integer Thread))
+(define (accept-and-handle listener timeout)
   (define cust (make-custodian))
 
   (parameterize ([current-custodian cust])
@@ -58,7 +64,7 @@
                 (close-output-port out)))))
 
   (thread (lambda ()
-            (sleep 10)
+            (sleep timeout)
             (custodian-shutdown-all cust))))
 
 (: handle (-> Input-Port Output-Port Void))
