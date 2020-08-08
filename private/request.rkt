@@ -14,11 +14,11 @@
   ([url : (Option URL)]
    [path : URL-Path]
    [query-string : InsecureString]
-   [state : Symbol]))
+   [state : (U 'ok 'err)]))
 
 (: empty-request (-> request))
 (define (empty-request)
-  (request #f (list "") "" 'fifty))
+  (request #f (list "") "" 'err))
 
 (: port->request (-> Input-Port request))
 (define (port->request in)

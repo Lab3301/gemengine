@@ -50,12 +50,12 @@
   (define cust (make-custodian))
 
   (parameterize ([current-custodian cust])
-    (define-values (in out) (ssl-accept listener))
-
-    (thread (lambda ()
-              (handle in out)
-              (close-input-port in)
-              (close-output-port out))))
+    (with-handlers ([exn:fail:network? (lambda (_) (displayln "Failed TLS connection."))])
+      (define-values (in out) (ssl-accept listener))
+      (thread (lambda ()
+                (handle in out)
+                (close-input-port in)
+                (close-output-port out)))))
 
   (thread (lambda ()
             (sleep 10)
@@ -70,6 +70,6 @@
 (: handle-req (-> request String))
 (define (handle-req req)
   (define req-body : (-> request response)
-    (dispatch (request-path req)))
+    (dispatch req))
 
   (response-body (req-body req)))

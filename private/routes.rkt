@@ -26,10 +26,13 @@
       (set-route-trie-value! next body)
       (set-route next path-tail body)))
 
-(: dispatch (-> URL-Path (-> request response)))
-(define (dispatch url-path)
-  (define body (get-route routes url-path))
-  (if (false? body) not-found body))
+(: dispatch (-> request (-> request response)))
+(define (dispatch req)
+  (case (request-state req)
+    ['ok
+     (let ([body (get-route routes (request-path req))])
+       (if (false? body) not-found body))]
+    [else temporary-failure]))
 
 (: get-route (-> route-trie URL-Path (Option (-> request response))))
 (define (get-route trie url-path)
@@ -51,4 +54,7 @@
 ;; Default routes
 (define not-found : (-> request response)
   (lambda ([_ : request]) (response "51 Not Found\r\n")))
+
+(define temporary-failure : (-> request response)
+  (lambda ([_ : request]) (response "40 Temporary Failure\r\n")))
 
