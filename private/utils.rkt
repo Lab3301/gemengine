@@ -1,16 +1,31 @@
 #lang typed/racket
 
-(require "request.rkt" "response.rkt" "routes.rkt" typed/net/url)
+(require "request.rkt" "response.rkt" "routes.rkt"
+         typed/net/url)
 
 (provide (all-defined-out))
 
-(: send-file (-> SecureString response))
-(define (send-file filename)
-  (assert filename string?)
+(define file-dir : (Boxof (Option Path)) (box #f))
 
-  (if (file-exists? filename)
-      (send-text (file->string filename))
-      (not-found (empty-request))))
+(: set-file-directory (-> Path Void))
+(define (set-file-directory dir)
+  (if (string? (unbox file-dir))
+      (raise "Cannot set file directory multiple times.")
+      (set-box! file-dir [simplify-path (path->complete-path dir)])))
+
+(: send-file (-> Path-String response))
+(define (send-file filename)
+  (define dir : (Option Path) (unbox file-dir))
+
+  (if (path? dir)
+      (let ([file (path->string [simplify-path (build-path dir filename)])])
+        (cond
+          [(not (string-prefix? file (path->string dir)))
+           (temporary-failure (empty-request))]
+          [(file-exists? file)
+           (send-text (file->string file))]
+          [else (not-found (empty-request))]))
+      (raise "File directory must be set.")))
 
 (: send-text (-> SecureString response))
 (define (send-text content)
