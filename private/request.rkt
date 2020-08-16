@@ -1,19 +1,15 @@
 #lang typed/racket
 
-(require typed/net/url "url-path.rkt")
+(require typed/net/url "url-path.rkt" "types.rkt")
+
 (provide (all-defined-out))
 
 (define-type QueryPair (Pairof Symbol (Option String)))
 
-; Fake nominal typing
-(define-type GeminiString (U String (U 'secure 'insecure)))
-(define-type SecureString (U String 'secure))
-(define-type InsecureString (U String 'insecure))
-
 (struct request
   ([url : (Option URL)]
    [path : URL-Path]
-   [query-string : InsecureString]
+   [query-string : Insecure-String]
    [state : (U 'ok 'err)]))
 
 (: empty-request (-> request))

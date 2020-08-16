@@ -1,9 +1,10 @@
 #lang typed/racket
 
 (require "request.rkt" "response.rkt" "routes.rkt"
-         typed/net/url)
+         "types.rkt" typed/net/url)
 
-(provide (all-defined-out))
+(provide (all-defined-out)
+         (all-from-out "types.rkt"))
 
 (define file-dir : (Boxof (Option Path)) (box #f))
 
@@ -27,19 +28,23 @@
           [else (not-found (empty-request))]))
       (raise "File directory must be set.")))
 
-(: send-text (-> SecureString response))
+(: send-text (-> Formatted-String response))
 (define (send-text content)
   (response (format "20 text/gemini\r\n~a" content)))
 
-(: request-input (-> SecureString response))
+(: request-input (-> Formatted-String response))
 (define (request-input prompt)
   (response (format "10 ~a\r\n" prompt)))
 
-(: redirect (-> SecureString response))
+(: redirect (-> Gemini-Path response))
 (define (redirect url)
+  (redirect-external url))
+
+(: redirect-external (-> Gemini-String response))
+(define (redirect-external url)
   (response (format "30 ~a\r\n" url)))
 
-(: escape (-> GeminiString SecureString))
+(: escape (-> Gemini-String Formatted-String))
 (define (escape text)
   (assert text string?)
 
