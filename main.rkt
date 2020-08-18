@@ -16,8 +16,8 @@
 (provide serve serve-forever route (struct-out request)
          response (all-from-out "private/utils.rkt"))
 
-(: serve (-> Positive-Integer String String Positive-Integer (-> Void)))
-(define (serve port-no cert key timeout)
+(: serve (-> Positive-Integer String String Positive-Integer Positive-Integer (-> Void)))
+(define (serve port-no cert key timeout mem-limit)
   (define main-cust (make-custodian))
 
   (parameterize ([current-custodian main-cust])
@@ -29,7 +29,7 @@
     (define listener : SSL-Listener (ssl-listen port-no 5 #t #f ctx))
 
     (define (loop) : Void
-      (accept-and-handle listener timeout)
+      (accept-and-handle listener timeout mem-limit)
       (loop))
 
     (thread loop))
@@ -38,22 +38,29 @@
     (custodian-shutdown-all main-cust)))
 
 (: serve-forever (->* (Positive-Integer)
-                      (#:certificate String #:key String #:timeout Positive-Integer)
+                      (#:certificate String
+                       #:key String
+                       #:timeout Positive-Integer
+                       #:memory-limit Positive-Integer)
                       (-> Void)))
 (define (serve-forever port-no
                        #:certificate [cert "/etc/gemini/certificate.pem"]
                        #:key [key "/etc/gemini/key.pem"]
-                       #:timeout [timeout 10])
-  (serve port-no cert key timeout)
+                       #:timeout [timeout 10]
+                       #:memory-limit [mem-limit 10])
+
+  (serve port-no cert key timeout mem-limit)
 
   (define (loop)
     (sync never-evt))
 
   (loop))
 
-(: accept-and-handle (-> SSL-Listener Positive-Integer Thread))
-(define (accept-and-handle listener timeout)
+(: accept-and-handle (-> SSL-Listener Positive-Integer Positive-Integer Thread))
+(define (accept-and-handle listener timeout mem-limit)
   (define cust (make-custodian))
+
+  (custodian-limit-memory cust (* mem-limit 1024 1024))
 
   (parameterize ([current-custodian cust])
     (with-handlers ([exn:fail:network? (lambda (_) (displayln "Failed TLS connection."))])
