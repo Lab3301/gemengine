@@ -1,12 +1,36 @@
 #lang typed/racket
 
 (require "request.rkt" "response.rkt" "routes.rkt"
-         "types.rkt" typed/net/url)
+         "types.rkt" typed/net/url typed/db)
 
 (provide (all-defined-out)
          (all-from-out "types.rkt"))
 
 (define file-dir : (Boxof (Option Path)) (box #f))
+(define db : (Boxof (Option Connection)) (box #f))
+
+(: set-database (-> String Void))
+(define (set-database path)
+  (set-box! db (sqlite3-connect #:database path)))
+
+(: get-database (-> Connection))
+(define (get-database)
+  (assert (unbox db)))
+
+(: init-counter (-> (U rows-result simple-result)))
+(define (init-counter)
+  (define _db (get-database))
+  (query _db "CREATE TABLE IF NOT EXISTS counter ( id INTEGER PRIMARY KEY );"))
+
+(: update-counter (-> (U rows-result simple-result)))
+(define (update-counter)
+  (define _db (get-database))
+  (query _db "INSERT INTO counter DEFAULT VALUES;"))
+
+(: get-counter (-> SQL-Datum))
+(define (get-counter)
+  (define _db (get-database))
+  (query-value _db "SELECT count(*) FROM counter;"))
 
 (: set-file-directory (-> Path Void))
 (define (set-file-directory dir)
