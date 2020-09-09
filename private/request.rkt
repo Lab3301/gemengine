@@ -26,12 +26,12 @@
 
 (: string->request (-> String request))
 (define (string->request line)
-  (define url (string->url line))
+  (define url (string->url (string-trim line "/" #:left? #f #:repeat? #t)))
+
   (define path : URL-Path
     (map path/param->string (url-path url)))
   (define query : String (url-query->string (url-query url)))
-
-  (request url path query 'ok))
+  (request url (if (empty? path) '("") path) query 'ok))
 
 (: url-query->string (-> (Listof QueryPair) String))
 (define (url-query->string query-pairs)
